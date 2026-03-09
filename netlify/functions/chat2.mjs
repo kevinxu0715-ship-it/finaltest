@@ -20,7 +20,7 @@ export default async function handler(request) {
         "Authorization": `Bearer ${XAI_API_KEY}`
       },
       body: JSON.stringify({
-        model: "grok-4-1-fast-reasoning",
+        model: "grok-4-1-fast-non-reasoning",
         max_tokens: 200,
         messages: [
           { role: "system", content: SYSTEM_PROMPT },
@@ -44,3 +44,4 @@ export default async function handler(request) {
     return new Response(JSON.stringify({ error: error.message }), { status: 500 });
   }
 }
+
