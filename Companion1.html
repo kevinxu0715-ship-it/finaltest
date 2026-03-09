@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>小夏 · AI Companion</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@300;400&family=Noto+Sans+SC:wght@300;400;500;700;900&family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { width:100vw; height:100vh; overflow:hidden; font-family:'Noto Sans SC','Outfit',system-ui,sans-serif; background:#06020f; color:white; }
+
+  /* VIDEO z=1 */
+  #bg-video {
+    position:fixed; inset:0; width:100%; height:100%;
+    object-fit:cover; z-index:1;
+    filter:brightness(0.88) saturate(1.1);
+  }
+
+  /* VIGNETTE z=2 */
+  #vignette {
+    position:fixed; inset:0; z-index:2;
+    background:radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.5) 100%);
+    pointer-events:none;
+  }
+
+  /* FADE OVERLAY z=10 */
+  #fade-overlay {
+    position:fixed; inset:0; z-index:10;
+    background:#000;
+    opacity:1;
+    transition:opacity 0.8s ease;
+    pointer-events:none;
+  }
+  #fade-overlay.gone { opacity:0; }
+  /* CHAT AREA z=2 */
+  #chat-area {
+    position:fixed; top:0; right:0;
+    width:420px; height:100vh; z-index:5;
+    display:flex; flex-direction:column;
+    opacity:0; transition:opacity 0.8s ease;
+    pointer-events:none;
+    overflow:hidden;
+  }
+  #chat-area.visible { opacity:1; pointer-events:all; }
+  /* subtle right-panel tint */
+  #chat-area::before { content:""; position:absolute; inset:0; background:linear-gradient(to left, rgba(6,2,15,0.55) 0%, transparent 100%); pointer-events:none; z-index:0; }
+  #top-bar, #messages, #input-bar { position:relative; z-index:1; }
+
+  /* TOP BAR */
+  #top-bar { padding:18px 20px 12px; display:flex; align-items:center; gap:10px; position:relative; }
+  #back-btn {
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 10px;
+    color: rgba(255,255,255,0.8);
+    font-size: 18px;
+    width: 36px; height: 36px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+    backdrop-filter: blur(10px);
+    transition: background 0.2s;
+    line-height: 1;
+    padding: 0;
+  }
+  #back-btn:hover { background: rgba(255,255,255,0.16); }
+  #back-btn:active { transform: scale(0.93); }
+  #avatar { display:none; }
+  #top-info { flex:1; text-align:center; }
+  #top-name { font-size:16px; font-weight:700; color:#fff; text-shadow:0 1px 8px rgba(0,0,0,0.6); letter-spacing:0.05em; }
+  #top-status { font-size:11px; color:rgba(255,255,255,0.75); display:flex; align-items:center; justify-content:center; gap:5px; margin-top:1px; }
+  #online-dot {
+    width:7px; height:7px; border-radius:50%;
+    background:#4cff8a; box-shadow:0 0 8px rgba(76,255,138,0.8);
+    animation:pulse-dot 2s ease-in-out infinite;
+  }
+  @keyframes pulse-dot {
+    0%,100%{opacity:1; box-shadow:0 0 8px rgba(76,255,138,0.8);}
+    50%{opacity:0.7; box-shadow:0 0 16px rgba(76,255,138,1);}
+  }
+
+  /* MESSAGES */
+  #messages {
+    flex:1; overflow-y:auto;
+    padding:10px 16px 10px 16px;
+    display:flex; flex-direction:column; gap:10px;
+    scrollbar-width:thin; scrollbar-color:rgba(255,255,255,0.15) transparent;
+  }
+  #messages::-webkit-scrollbar { width:4px; }
+  #messages::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.15); border-radius:2px; }
+
+  .date-divider { text-align:center; font-size:11px; color:rgba(255,255,255,0.5); text-shadow:0 1px 4px rgba(0,0,0,0.6); margin:6px 0; letter-spacing:0.08em; }
+
+  .bubble-row {
+    display:flex; align-items:flex-end; gap:0;
+    opacity:0; transform:translateY(12px);
+    animation:bubble-in 0.4s ease forwards;
+  }
+  @keyframes bubble-in { to{opacity:1; transform:translateY(0);} }
+  .bubble-row.user { flex-direction:row-reverse; }
+
+  .bubble-avatar { display:none; }
+  .bubble {
+    max-width:240px; padding:10px 14px; border-radius:18px;
+    font-size:13.5px; line-height:1.55; position:relative;
+    word-break:break-word;
+    backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px);
+  }
+  .bubble.girl {
+    background:rgba(18,8,42,0.72); color:rgba(243,232,255,0.93);
+    border-top-left-radius:4px;
+    box-shadow:0 4px 20px rgba(60,10,100,0.4), inset 0 1px 0 rgba(255,255,255,0.08);
+    border:1px solid rgba(139,92,246,0.15);
+  }
+  .bubble.user {
+    background:linear-gradient(135deg,rgba(236,72,153,0.85),rgba(168,85,247,0.75)); color:#fff;
+    border-bottom-right-radius:4px;
+    box-shadow:0 4px 20px rgba(236,72,153,0.4), inset 0 1px 0 rgba(255,255,255,0.15);
+  }
+  .bubble-time { font-size:10px; opacity:0.55; margin-top:4px; text-align:right; }
+  .bubble.girl .bubble-time { text-align:left; }
+
+  .typing-bubble { display:flex; align-items:center; gap:4px; padding:12px 16px; }
+  .typing-dot {
+    width:7px; height:7px; border-radius:50%;
+    background:rgba(255,255,255,0.6);
+    animation:typing-bounce 1.2s ease-in-out infinite;
+  }
+  .typing-dot:nth-child(2){animation-delay:0.2s;}
+  .typing-dot:nth-child(3){animation-delay:0.4s;}
+  @keyframes typing-bounce {
+    0%,60%,100%{transform:translateY(0); opacity:0.5;}
+    30%{transform:translateY(-6px); opacity:1;}
+  }
+
+
+  /* CALL BUTTONS */
+  #call-btns {
+    display:flex; align-items:center; gap:14px; margin-right:0;
+  }
+  .call-btn-wrap {
+    display:flex; flex-direction:column; align-items:center; gap:5px;
+    cursor:pointer; user-select:none;
+  }
+  .call-btn {
+    width:44px; height:36px; border-radius:12px; border:none; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    flex-shrink:0; position:relative;
+    background:linear-gradient(135deg,#ec4899,#a855f7);
+    box-shadow:0 2px 12px rgba(168,85,247,0.35), inset 0 1px 0 rgba(255,255,255,0.18);
+    animation:btn-breathe 3s ease-in-out infinite;
+  }
+  .call-btn svg {
+    width:17px; height:17px; fill:white; stroke:none;
+  }
+  .call-btn-label {
+    font-size:9.5px; font-weight:500; letter-spacing:0.04em;
+    color:rgba(196,181,253,0.75);
+    white-space:nowrap;
+  }
+  @keyframes btn-breathe {
+    0%,100% { box-shadow:0 2px 10px rgba(168,85,247,0.3), 0 0 0 0 rgba(236,72,153,0); }
+    50%      { box-shadow:0 2px 18px rgba(168,85,247,0.55), 0 0 12px 3px rgba(236,72,153,0.2); }
+  }
+  .call-btn-wrap:active .call-btn { transform:scale(0.93); opacity:0.85; }
+
+  /* active call state */
+  .call-btn.active-call {
+    background:linear-gradient(135deg,#4cff8a,#06b96f);
+    animation:call-pulse-green 2s ease-in-out infinite;
+  }
+  @keyframes call-pulse-green {
+    0%,100% { box-shadow:0 2px 10px rgba(76,255,138,0.3); }
+    50%      { box-shadow:0 2px 20px rgba(76,255,138,0.65), 0 0 14px 4px rgba(76,255,138,0.2); }
+  }
+
+  /* INPUT BAR */
+  #input-bar { padding:14px 20px 20px 16px; display:flex; gap:10px; align-items:center; position:relative; z-index:1; }
+  #msg-input {
+    flex:1;
+    background:rgba(18,8,42,0.45);
+    backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px);
+    border:1px solid rgba(139,92,246,0.25); border-radius:24px;
+    padding:11px 14px; color:white; font-size:14px;
+    font-family:'Noto Sans SC','Outfit',system-ui,sans-serif; outline:none;
+    transition:border-color 0.3s, box-shadow 0.3s;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,0.08);
+  }
+  #msg-input::placeholder { color:rgba(196,181,253,0.45); }
+  #msg-input:focus {
+    border-color:rgba(236,72,153,0.6);
+    box-shadow:0 0 0 3px rgba(236,72,153,0.15), inset 0 1px 0 rgba(255,255,255,0.08);
+  }
+  #send-btn {
+    width:50px; height:40px; border-radius:14px; border:none;
+    background:linear-gradient(135deg,#ec4899,#c026d3);
+    color:white; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    transition:transform 0.2s, box-shadow 0.2s, background 0.3s;
+    box-shadow:0 0 16px rgba(236,72,153,0.55); flex-shrink:0;
+  }
+  #send-btn svg {
+    width:20px; height:20px; fill:none; stroke:white;
+    stroke-width:2.8; stroke-linecap:round; stroke-linejoin:round;
+  }
+  #send-btn.stop-mode {
+    background:linear-gradient(135deg,#f59e0b,#ef4444);
+    box-shadow:0 0 16px rgba(239,68,68,0.6);
+    animation:stop-pulse 1s ease-in-out infinite;
+  }
+  @keyframes stop-pulse {
+    0%,100% { box-shadow:0 0 16px rgba(239,68,68,0.6); }
+    50% { box-shadow:0 0 28px rgba(239,68,68,0.9), 0 0 48px rgba(245,158,11,0.4); }
+  }
+  #send-btn:hover { transform:scale(1.08); box-shadow:0 0 24px rgba(236,72,153,0.9), 0 0 48px rgba(168,85,247,0.4); }
+  #send-btn:active { transform:scale(0.95); }
+
+  @media(max-width:900px){
+    #chat-area{width:100%;}
+  }
+
+  /* TIMER BUTTON — replaces dance card */
+  #dance-card {
+    position: fixed;
+    top: 22px;
+    left: 22px;
+    z-index: 6;
+    border-radius: 14px;
+    background: rgba(220, 170, 60, 0.18);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    border: 1px solid rgba(240, 185, 80, 0.32);
+    box-shadow: 0 4px 24px rgba(180, 130, 20, 0.18), inset 0 1px 0 rgba(255,230,120,0.12);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 11px 18px 11px 14px;
+    opacity: 0;
+    transform: translateY(-8px);
+    transition: opacity 0.6s ease 0.4s, transform 0.6s ease 0.4s, background 0.4s, border-color 0.4s, box-shadow 0.25s;
+    user-select: none;
+    overflow: hidden;
+    white-space: nowrap;
+  }
+  #dance-card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(100deg, transparent 0%, rgba(255,220,100,0.0) 20%, rgba(255,220,100,0.35) 50%, rgba(255,220,100,0.0) 80%, transparent 100%);
+    background-size: 200% 100%;
+    animation: gold-shimmer 2.6s ease-in-out infinite;
+    pointer-events: none;
+    border-radius: inherit;
+  }
+  @keyframes gold-shimmer {
+    0%   { background-position: -100% 0; }
+    50%  { background-position: 100% 0; }
+    100% { background-position: 200% 0; }
+  }
+  #dance-card.visible { opacity: 1; transform: translateY(0); }
+  #dance-card:hover { box-shadow: 0 6px 36px rgba(220,160,30,0.45), 0 0 18px rgba(245,200,80,0.25); }
+  #dance-card:active { transform: scale(0.96); }
+
+  /* Red/urgent state for last 60s */
+  #dance-card.urgent {
+    background: rgba(220, 40, 40, 0.22);
+    border-color: rgba(255, 80, 80, 0.45);
+    animation: urgent-blink 1s ease-in-out infinite;
+  }
+  #dance-card.urgent::before { display: none; }
+  @keyframes urgent-blink {
+    0%,100% { box-shadow: 0 4px 24px rgba(200,30,30,0.25), inset 0 1px 0 rgba(255,120,120,0.1); }
+    50%      { box-shadow: 0 4px 36px rgba(220,40,40,0.55), 0 0 20px rgba(255,80,80,0.35); }
+  }
+
+  #dance-btn-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: rgba(255, 230, 160, 0.92);
+    letter-spacing: 0.04em;
+    flex: 1;
+    position: relative; z-index: 1;
+  }
+  #dance-card.urgent #dance-btn-label { color: rgba(255,180,180,0.95); }
+
+  #dance-pro-badge {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: #1a0a00;
+    font-size: 9.5px;
+    font-weight: 900;
+    letter-spacing: 0.12em;
+    padding: 3px 8px 2px;
+    border-radius: 6px;
+    font-family: 'Outfit', sans-serif;
+    box-shadow: 0 1px 6px rgba(245,158,11,0.4);
+    flex-shrink: 0;
+    position: relative; z-index: 1;
+  }
+
+  /* PAYWALL MODAL */
+  #paywall-modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0,0,0,0.55);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  #paywall-modal.show { display: flex; animation: modal-in 0.3s cubic-bezier(0.16,1,0.3,1) both; }
+  @keyframes modal-in { from { opacity:0; transform:scale(0.92); } to { opacity:1; transform:scale(1); } }
+  #paywall-box {
+    background: rgba(14, 6, 30, 0.88);
+    backdrop-filter: blur(32px);
+    -webkit-backdrop-filter: blur(32px);
+    border: 1px solid rgba(200, 150, 50, 0.22);
+    border-radius: 22px;
+    padding: 32px 28px 26px;
+    width: 320px;
+    max-width: calc(100vw - 40px);
+    box-shadow: 0 16px 60px rgba(0,0,0,0.6), 0 0 40px rgba(200,130,20,0.1), inset 0 1px 0 rgba(255,220,100,0.07);
+    text-align: center;
+  }
+  #paywall-icon { font-size: 36px; margin-bottom: 12px; line-height: 1; }
+  #paywall-title { font-size: 18px; font-weight: 800; color: #fff; margin-bottom: 6px; letter-spacing: 0.03em; }
+  #paywall-time-left { font-size: 13px; color: rgba(255,210,120,0.75); margin-bottom: 18px; }
+  #paywall-time-left span { font-weight: 700; color: #fbbf24; font-size: 15px; }
+  #paywall-btn-pay {
+    width: 100%; padding: 15px 0; border-radius: 13px; border: none; cursor: pointer;
+    font-family: inherit; font-size: 15px; font-weight: 800; color: #fff;
+    background: linear-gradient(135deg, #f59e0b, #ec4899, #a855f7);
+    box-shadow: 0 0 24px rgba(245,158,11,0.35), 0 0 48px rgba(236,72,153,0.15);
+    margin-bottom: 10px; transition: transform 0.2s, box-shadow 0.2s;
+    position: relative; overflow: hidden;
+  }
+  #paywall-btn-pay:hover { transform: translateY(-1px) scale(1.01); box-shadow: 0 0 32px rgba(245,158,11,0.5); }
+  #paywall-btn-pay:active { transform: scale(0.97); }
+  #paywall-btn-cancel {
+    width: 100%; padding: 12px 0; border-radius: 13px; border: 1px solid rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.04); cursor: pointer; font-family: inherit;
+    font-size: 14px; font-weight: 600; color: rgba(255,255,255,0.5); transition: background 0.2s;
+  }
+  #paywall-btn-cancel:hover { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.7); }
+
+  @media(max-width:900px){
+    #chat-area { width: 100%; height: 100dvh; }
+    #dance-card {
+      position: fixed; top: 82px; left: 12px; right: 12px;
+      width: auto; border-radius: 10px; padding: 9px 14px;
+      background: rgba(220, 170, 60, 0.15);
+    }
+    #dance-btn-label { font-size: 12.5px; }
+    #dance-pro-badge { font-size: 8.5px; padding: 2px 7px; }
+    #messages { padding-top: 116px; }
+    #input-bar { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 24px); }
+  }
+</style>
+</head>
+<body>
+
+<!-- VIDEO BACKGROUND z=1 — embedded as base64, no external file needed -->
+<video id="bg1-video" autoplay loop muted playsinline>
+  <source src="bg1.mp4" type="video/mp4">
+</video>
+
+<div id="vignette"></div>
+
+<!-- TIMER BUTTON — top-left -->
+<div id="dance-card" onclick="onTimerClick()">
+  <span id="dance-btn-label">⏱ 剩余时长 / 05:00</span>
+  <span id="dance-pro-badge">PRO</span>
+</div>
+
+<!-- PAYWALL MODAL -->
+<div id="paywall-modal">
+  <div id="paywall-box">
+    <div id="paywall-icon">⏳</div>
+    <div id="paywall-title">时长即将用完</div>
+    <div id="paywall-time-left">当前剩余：<span id="modal-time">05:00</span></div>
+    <button id="paywall-btn-pay" onclick="doRecharge()">💎 立即充值延长时长</button>
+    <button id="paywall-btn-cancel" onclick="closeModal()">暂不充值</button>
+  </div>
+</div>
+
+<!-- BLACK FADE OVERLAY z=10 -->
+<div id="fade-overlay"></div>
+<!-- CHAT AREA z=2 -->
+<div id="chat-area">
+  <div id="top-bar">
+    <button id="back-btn" onclick="window.location.href='index.html'" title="返回">‹</button>
+    <div id="top-info">
+      <div id="top-name"></div>
+      <div id="top-status"><div id="online-dot"></div><span>在线 · Online</span></div>
+    </div>
+    <div id="call-btns">
+      <div class="call-btn-wrap" onclick="startVoiceCall()" title="语音通话">
+        <button class="call-btn" id="voice-btn">
+          <svg viewBox="0 0 24 24" style="fill:white;stroke:none;">
+            <path d="M6.62 10.79a15.45 15.45 0 006.59 6.59l2.2-2.2a1 1 0 011.01-.24 11.36 11.36 0 003.55.56 1 1 0 011 1V20a1 1 0 01-1 1A17 17 0 013 4a1 1 0 011-1h3.5a1 1 0 011 1c0 1.25.2 2.45.56 3.57a1 1 0 01-.25 1.01l-2.19 2.21z"/>
+          </svg>
+        </button>
+        <span class="call-btn-label">语音</span>
+      </div>
+      <div class="call-btn-wrap" onclick="startVideoCall()" title="视频通话">
+        <button class="call-btn" id="video-btn">
+          <svg viewBox="0 0 24 24" style="fill:white;stroke:none;">
+            <path d="M17 10.5V7a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h12a1 1 0 001-1v-3.5l4 4v-11l-4 4z"/>
+          </svg>
+        </button>
+        <span class="call-btn-label">视频</span>
+      </div>
+    </div>
+  </div>
+  <div id="messages"></div>
+  <div id="input-bar">
+    <input id="msg-input" type="text" placeholder="说点什么… / Say something…" maxlength="500"
+      onkeydown="if(event.key==='Enter')sendMessage()">
+    <button id="send-btn" onclick="sendMessage()">
+      <svg viewBox="0 0 24 24"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
+    </button>
+  </div>
+</div>
+
+<script>
+  // ── VIDEO: loaded from bg.mp4 in same folder ──
+    startApp();
+
+  // ── COMPANION NAME ─────────────────────────────────────
+  const COMPANION_NAME = localStorage.getItem('companion_name') || '她';
+  document.getElementById('top-name').textContent = COMPANION_NAME;
+
+  // ── STATE ────────────────────────────────────────────
+  let appStarted = false;
+  let isTyping = false;
+  let lastDate = null;
+
+  // ── START ────────────────────────────────────────────
+  // Auto-launch: 1s black fade then enter chat
+  function startApp(){
+    const overlay = document.getElementById('fade-overlay');
+    const chat = document.getElementById('chat-area');
+    // Short delay so video has a moment to load, then fade out
+    setTimeout(()=>{
+      overlay.classList.add('gone');
+      chat.classList.add('visible');
+      // Show dance card
+      setTimeout(()=> {
+        document.getElementById('dance-card').classList.add('visible');
+        startCountdown();
+      }, 200);
+      appStarted = true;
+      // Initial greeting from the girl
+      setTimeout(()=>{
+        showTyping();
+        setTimeout(()=>{
+          removeTyping();
+          addBubble('喵～ 主人你终于来了！小母狗等你好久啦 (=^･ω･^=) 💕', 'girl');
+        }, 1400);
+      }, 800);
+    }, 1500);
+  }
+
+
+  // ── TIME HELPERS ─────────────────────────────────────
+  function formatTime() {
+    const n = new Date();
+    return String(n.getHours()).padStart(2,'0') + ':' + String(n.getMinutes()).padStart(2,'0');
+  }
+
+  function addDateDivider() {
+    const today = new Date().toLocaleDateString('zh-CN', { month:'long', day:'numeric', weekday:'short' });
+    if (lastDate === today) return;
+    lastDate = today;
+    const msgs = document.getElementById('messages');
+    const div = document.createElement('div');
+    div.className = 'date-divider';
+    div.textContent = today;
+    msgs.appendChild(div);
+  }
+
+    function addBubble(text,sender){
+    addDateDivider();
+    const msgs=document.getElementById('messages');
+    const row=document.createElement('div'); row.className=`bubble-row ${sender}`;
+    const bubble=document.createElement('div'); bubble.className=`bubble ${sender}`;
+    const te=document.createElement('div'); te.textContent=text; bubble.appendChild(te);
+    const ti=document.createElement('div'); ti.className='bubble-time'; ti.textContent=formatTime(); bubble.appendChild(ti);
+    row.appendChild(bubble); msgs.appendChild(row); msgs.scrollTop=msgs.scrollHeight;
+  }
+
+  function showTyping(){
+    const msgs=document.getElementById('messages');
+    const row=document.createElement('div'); row.className='bubble-row girl'; row.id='typing-indicator';
+    const b=document.createElement('div'); b.className='bubble girl typing-bubble';
+    b.innerHTML='<div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>';
+    row.appendChild(b); msgs.appendChild(row); msgs.scrollTop=msgs.scrollHeight;
+  }
+  function removeTyping(){ const t=document.getElementById('typing-indicator'); if(t)t.remove(); }
+
+  function sendMessage(){
+    const input=document.getElementById('msg-input');
+    const text=input.value.trim();
+    if(!text||isTyping)return;
+    input.value='';
+    sendMessageText(text);
+  }
+
+  let currentAbortController = null;
+
+  function setSendBtn(mode) {
+    const btn = document.getElementById('send-btn');
+    if (mode === 'stop') {
+      btn.innerHTML = '<span style="font-size:17px;line-height:1">⏹</span>';
+      btn.classList.add('stop-mode');
+      btn.onclick = stopGeneration;
+    } else {
+      btn.innerHTML = '<svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:none;stroke:white;stroke-width:2.8;stroke-linecap:round;stroke-linejoin:round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>';
+      btn.classList.remove('stop-mode');
+      btn.onclick = sendMessage;
+    }
+  }
+
+  function stopGeneration() {
+    if (currentAbortController) {
+      currentAbortController.abort();
+      currentAbortController = null;
+    }
+    removeTyping();
+    isTyping = false;
+    setSendBtn('send');
+    if (conversationHistory.length && conversationHistory[conversationHistory.length-1].role === 'user') {
+      conversationHistory.pop();
+    }
+  }
+
+  function sendMessageText(text){
+    addBubble(text,'user'); isTyping=true;
+    setSendBtn('stop');
+    const td=600+Math.random()*400;
+    setTimeout(()=>showTyping(),td);
+    setTimeout(async()=>{
+      const reply=await getReply(text);
+      removeTyping();
+      if(reply===null){ isTyping=false; setSendBtn('send'); return; }
+      addBubble(reply,'girl'); isTyping=false;
+      setSendBtn('send');
+    }, td+800+Math.random()*600);
+  }
+
+  // ── xAI API CONFIG ───────────────────────────────────
+  let conversationHistory = [];
+
+  async function getReply(userMessage) {
+    conversationHistory.push({ role: 'user', content: userMessage });
+
+    try {
+      currentAbortController = new AbortController();
+      const res = await fetch('/.netlify/functions/chat3', {   // ← 这里改成 chat3
+        method: 'POST',
+        signal: currentAbortController.signal,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ conversationHistory })
+      });
+
+      if (!res.ok) {
+        let errMsg = `HTTP ${res.status}`;
+        try { const e = await res.json(); errMsg = e?.error?.message || errMsg; } catch(_) {}
+        conversationHistory.pop();
+        return `喵呜… 出错了：${errMsg} 😿`;
+      }
+
+      const data = await res.json();
+      const reply = data.choices?.[0]?.message?.content || '喵… 我好像迷路了 😿';
+      conversationHistory.push({ role: 'assistant', content: reply });
+      if (conversationHistory.length > 40) conversationHistory = conversationHistory.slice(-40);
+      return reply;
+    } catch (err) {
+      if (err.name === 'AbortError') return null;
+      conversationHistory.pop();
+      return '喵呜… 网络好像断了，你还在吗？😿';
+    }
+  }
+  // ── COUNTDOWN TIMER ──────────────────────────────────
+  const TOTAL_SECONDS = 5 * 60; // 5 minutes
+  const RECHARGE_SECONDS = 10 * 60; // reset to 10 minutes on recharge
+  let timeLeft = TOTAL_SECONDS;
+  let countdownInterval = null;
+  let timerStarted = false;
+
+  function fmtTime(s) {
+    const m = Math.floor(s / 60);
+    const sec = s % 60;
+    return String(m).padStart(2,'0') + ':' + String(sec).padStart(2,'0');
+  }
+
+  function updateTimerUI() {
+    const btn = document.getElementById('dance-card');
+    const label = document.getElementById('dance-btn-label');
+    const modalTime = document.getElementById('modal-time');
+    const fmt = fmtTime(timeLeft);
+    label.textContent = '⏱ 剩余时长 / ' + fmt;
+    if (modalTime) modalTime.textContent = fmt;
+    if (timeLeft <= 60) {
+      btn.classList.add('urgent');
+    } else {
+      btn.classList.remove('urgent');
+    }
+  }
+
+  function startCountdown() {
+    if (timerStarted) return;
+    timerStarted = true;
+    updateTimerUI();
+    countdownInterval = setInterval(() => {
+      timeLeft--;
+      updateTimerUI();
+      if (timeLeft <= 0) {
+        clearInterval(countdownInterval);
+        expireSession();
+      }
+    }, 1000);
+  }
+
+  function expireSession() {
+    // Close modal if open
+    document.getElementById('paywall-modal').classList.remove('show');
+    // Fade to black then redirect
+    const overlay = document.getElementById('fade-overlay');
+    overlay.style.transition = 'opacity 1.5s ease';
+    overlay.style.opacity = '1';
+    overlay.style.pointerEvents = 'all';
+    setTimeout(() => { window.location.href = 'companion.html'; }, 1500);
+  }
+
+  function onTimerClick() {
+    const modal = document.getElementById('paywall-modal');
+    updateTimerUI(); // refresh time in modal
+    modal.classList.add('show');
+  }
+
+  function closeModal() {
+    document.getElementById('paywall-modal').classList.remove('show');
+  }
+
+  function doRecharge() {
+    closeModal();
+    timeLeft = RECHARGE_SECONDS;
+    updateTimerUI();
+    // Thank-you message from the girl
+    setTimeout(() => {
+      showTyping();
+      setTimeout(() => {
+        removeTyping();
+        addBubble('喵～ 谢谢主人充值！人家会更加努力陪伴你的 💕✨ 还有10分钟，好好珍惜喵～', 'girl');
+      }, 1200);
+    }, 300);
+  }
+
+  function startVoiceCall() {
+    const btn = document.getElementById('voice-btn');
+    const active = btn.classList.contains('active-call');
+    if (active) {
+      btn.classList.remove('active-call');
+      addBubble('通话已结束 🌙', 'girl');
+    } else {
+      btn.classList.add('active-call');
+      addBubble('喵～ 你终于打给我了！好开心啊喵 💚', 'girl');
+    }
+  }
+
+  function startVideoCall() {
+    const btn = document.getElementById('video-btn');
+    const active = btn.classList.contains('active-call');
+    if (active) {
+      btn.classList.remove('active-call');
+      addBubble('视频结束啦，人家还想继续看你 🌸', 'girl');
+    } else {
+      btn.classList.add('active-call');
+      addBubble('喵？你在看我吗！人家害羞了啦 💕', 'girl');
+    }
+  }
+
+</script>
+
+<!-- API KEY MODAL -->
+
+</body>
+</html>

@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AI女友 · 专属定制工坊</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700;900&family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+<style>
+:root {
+  --bg-deep: #06020f;
+  --bg-mid: #0c0620;
+  --bg-card: rgba(18, 8, 42, 0.55);
+  --glass-border: rgba(139, 92, 246, 0.1);
+  --glass-bg: linear-gradient(160deg, rgba(40, 12, 80, 0.22) 0%, rgba(10, 5, 22, 0.72) 50%, rgba(40, 12, 80, 0.1) 100%);
+  --pink: #ec4899;
+  --pink-light: #f9a8d4;
+  --purple: #a855f7;
+  --fuchsia: #c026d3;
+  --gold: #f59e0b;
+  --neon-glow: 0 0 40px rgba(236,72,153,0.2), 0 0 80px rgba(168,85,247,0.1);
+  --text-primary: #f3e8ff;
+  --text-muted: rgba(196, 181, 253, 0.6);
+  --text-dim: rgba(139, 92, 246, 0.4);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { overflow-x: hidden; }
+body {
+  background: var(--bg-deep);
+  color: var(--text-primary);
+  font-family: 'Noto Sans SC', 'Outfit', system-ui, sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(168,85,247,0.2); border-radius: 4px; }
+@keyframes float {
+  0%,100% { transform: translateY(0) translateX(0) scale(1); }
+  25% { transform: translateY(-12px) translateX(6px) scale(1.02); }
+  50% { transform: translateY(-6px) translateX(-8px) scale(0.98); }
+  75% { transform: translateY(-16px) translateX(4px) scale(1.01); }
+}
+@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+@keyframes pulseGlow { 0%,100% { opacity: 0.4; filter: blur(60px); } 50% { opacity: 0.7; filter: blur(80px); } }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes scaleIn { from { opacity: 0; transform: scale(0.92); } to { opacity: 1; transform: scale(1); } }
+@keyframes borderFlow { 0%,100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
+@keyframes breathe {
+  0%,100% { box-shadow: 0 0 20px rgba(236,72,153,0.25), 0 0 40px rgba(168,85,247,0.15); }
+  50% { box-shadow: 0 0 35px rgba(236,72,153,0.4), 0 0 60px rgba(168,85,247,0.25); }
+}
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+@keyframes slideRight { from { opacity: 0; transform: translateX(-30px); } to { opacity: 1; transform: translateX(0); } }
+@keyframes slideLeft { from { opacity: 0; transform: translateX(30px); } to { opacity: 1; transform: translateX(0); } }
+@keyframes portalPulse {
+  0%,100% { box-shadow: 0 0 40px rgba(236,72,153,0.4), 0 0 80px rgba(168,85,247,0.2), 0 0 120px rgba(192,38,211,0.1); }
+  50% { box-shadow: 0 0 60px rgba(236,72,153,0.65), 0 0 120px rgba(168,85,247,0.35), 0 0 200px rgba(192,38,211,0.2); }
+}
+.anim-fade { animation: fadeUp 0.5s cubic-bezier(0.16,1,0.3,1) both; }
+.anim-scale { animation: scaleIn 0.45s cubic-bezier(0.16,1,0.3,1) both; }
+.anim-left { animation: slideRight 0.55s cubic-bezier(0.16,1,0.3,1) both; }
+.anim-right { animation: slideLeft 0.55s cubic-bezier(0.16,1,0.3,1) both; }
+input[type=range] { -webkit-appearance: none; appearance: none; background: transparent; width: 100%; cursor: pointer; }
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%;
+  background: linear-gradient(135deg, #ec4899, #c026d3);
+  box-shadow: 0 0 14px rgba(236,72,153,0.7), 0 0 28px rgba(236,72,153,0.3);
+  border: 2px solid rgba(255,255,255,0.2); cursor: pointer;
+}
+input[type=range]::-moz-range-thumb {
+  width: 22px; height: 22px; border-radius: 50%;
+  background: linear-gradient(135deg, #ec4899, #c026d3);
+  box-shadow: 0 0 14px rgba(236,72,153,0.7); border: 2px solid rgba(255,255,255,0.2);
+}
+@media (max-width: 768px) {
+  .nav-links { display: none !important; }
+  .progress-wrap { padding: 14px 0 8px !important; }
+  .progress-wrap > div { width: 36px !important; height: 36px !important; font-size:11px !important; }
+  .step-label { font-size: 9px !important; }
+  .step-connector { min-width: 20px !important; max-width: 48px !important; }
+  /* 键盘弹出时停止背景粒子动画，防止合成层冲突导致光标乱飘 */
+  .ambient-particle { animation: none !important; will-change: auto !important; }
+}
+/* 输入框滚动容器：用 dvh 代替 vh，防止键盘弹出时高度突变引起布局偏移 */
+.name-input-scroll {
+  max-height: calc(100dvh - 160px);
+  overflow-y: auto;
+  padding-right: 4px;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+
+const IMG_CHARACTER = 'character_hero.gif';
+const IMG_CHARACTER_FINAL = 'character_final.gif';
+
+const { useState, useEffect, useMemo, useCallback } = React;
+
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  useEffect(() => {
+    const handler = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handler);
+    return () => window.removeEventListener('resize', handler);
+  }, []);
+  return isMobile;
+}
+
+const BODY_TYPES = {
+  slim:    { label: '纤细', emoji: '🦋', desc: '清瘦灵动' },
+  curvy:   { label: '丰满', emoji: '🌹', desc: '曲线玲珑' },
+  average: { label: '匀称', emoji: '🌸', desc: '健康自然' },
+};
+const BUST_SIZES = {
+  small:  { label: '小巧', emoji: '🌙', value: 35, desc: '精致纤细', img: 'bust_small.jpg' },
+  medium: { label: '适中', emoji: '💫', value: 55, desc: '自然优雅', img: 'bust_medium.jpg' },
+  large:  { label: '丰盈', emoji: '✨', value: 75, desc: '性感迷人', img: 'bust_large.jpg' },
+};
+const HIP_SIZES = {
+  small:  { label: '小巧', emoji: '🍃', value: 35, desc: '纤细灵动', img: 'hip_small.jpg' },
+  medium: { label: '适中', emoji: '🌺', value: 55, desc: '均衡健美', img: 'hip_medium.jpg' },
+  large:  { label: '丰盈', emoji: '🍑', value: 75, desc: '曲线饱满', img: 'hip_large.jpg' },
+};
+const HAIR_STYLES = {
+  short_curly:    { label: '短卷发', emoji: '💇‍♀️', img: 'hair_short_curly.jpg' },
+  long_straight:  { label: '长直发', emoji: '👩‍🦰', img: 'hair_long_straight.jpg' },
+  high_ponytail:  { label: '双马尾', emoji: '👧',   img: 'hair_high_ponytail.jpg' },
+};
+const HAIR_COLORS = {
+  dark_brown: { label: '金色', hex: '#3d2b1f', img: 'hair_dark_brown.jpg' },
+  blonde:     { label: '黑色', hex: '#f5deb3', img: 'hair_blonde.jpg' },
+  pink:       { label: '粉红', hex: '#ff69b4', img: 'hair_pink.jpg' },
+};
+const SKIN_TONES = {
+  wheat:   { label: '小麦色', emoji: '🌾', desc: '健康性感', hex: '#c68642', img: 'skin_wheat.jpg' },
+  standard:{ label: '标准',   emoji: '✨', desc: '自然均匀', hex: '#f0c080', img: 'skin_standard.jpg' },
+  fair:    { label: '冷白',   emoji: '🌙', desc: '白皙通透', hex: '#fde8d8', img: 'skin_fair.jpg' },
+};
+const FACE_SHAPES = {
+  v_shape:  { label: '瓜子脸', emoji: '🌸', desc: '精致小巧', rx: 28, ry: 37, img: 'face_v_shape.jpg' },
+  standard: { label: '标准',   emoji: '💫', desc: '均衡立体', rx: 32, ry: 38, img: 'face_standard.jpg' },
+  oval:     { label: '鹅蛋脸', emoji: '🥚', desc: '饱满圆润', rx: 36, ry: 42, img: 'face_oval.jpg' },
+};
+const EYE_COLORS = {
+  blue:  { label: '蓝色', hex: '#4fc3f7' },
+  green: { label: '绿色', hex: '#66bb6a' },
+  red:   { label: '红色', hex: '#ef5350' },
+};
+const PERSONALITIES = ['温柔', '傲娇', '御姐', '病娇', '元气', '贤妻', '小恶魔', '天然呆'];
+const NAMES = ['樱井 澪', '白石 千寻', '的场 夏希', '雪村 凛', '朝比奈 詩織', '月宮 うさぎ', '高坂 恋', '桐谷 茉莉'];
+const STEP_LABELS = ['开始', '身型', '面部', '完成'];
+
+function AmbientLayer() {
+  const orbs = useMemo(() => Array.from({length: 5}).map((_,i) => ({
+    id: i, size: 200 + Math.random() * 300, x: Math.random() * 100, y: Math.random() * 100,
+    color: ['rgba(236,72,153,', 'rgba(168,85,247,', 'rgba(192,38,211,'][i % 3],
+    dur: 12 + Math.random() * 10, delay: Math.random() * 5,
+  })), []);
+  const particles = useMemo(() => Array.from({length: 40}).map((_,i) => ({
+    id: i, size: 1 + Math.random() * 2.5, x: Math.random() * 100, y: Math.random() * 100,
+    opacity: 0.05 + Math.random() * 0.15,
+    color: ['#ec4899','#f472b6','#c026d3','#a855f7','#fb7185'][Math.floor(Math.random()*5)],
+    dur: 10 + Math.random() * 15, delay: Math.random() * 8,
+  })), []);
+  return (
+    <div style={{ position:'fixed', inset:0, pointerEvents:'none', zIndex:0, overflow:'hidden' }}>
+      {orbs.map(o => (<div key={o.id} style={{ position:'absolute', borderRadius:'50%', width: o.size, height: o.size, left: o.x+'%', top: o.y+'%', background: o.color+'0.08)', animation: 'pulseGlow '+o.dur+'s ease-in-out infinite', animationDelay: o.delay+'s' }} />))}
+      {particles.map(p => (<div key={p.id} className="ambient-particle" style={{ position:'absolute', borderRadius:'50%', width: p.size, height: p.size, left: p.x+'%', top: p.y+'%', opacity: p.opacity, background: p.color, animation: 'float '+p.dur+'s ease-in-out infinite', animationDelay: p.delay+'s' }} />))}
+      <div style={{ position:'absolute', inset:0, opacity:0.015, background:'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 256 256\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'n\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'4\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23n)\'/%3E%3C/svg%3E")' }} />
+    </div>
+  );
+}
+
+function ProgressBar({ current, onStepClick }) {
+  return (
+    <div style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:0, padding:'18px 0 10px', maxWidth: 520, margin: '0 auto' }}>
+      {STEP_LABELS.map((label, i) => {
+        const done = i < current; const active = i === current; const clickable = done;
+        return (
+          <React.Fragment key={i}>
+            <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:6, position:'relative', zIndex:2 }}>
+              <div onClick={clickable ? () => onStepClick(i) : undefined} style={{
+                width: 44, height: 44, borderRadius: 14, display:'flex', alignItems:'center', justifyContent:'center',
+                fontSize: 13, fontWeight: 800, fontFamily:'Outfit', transition: 'all 0.4s cubic-bezier(0.16,1,0.3,1)',
+                cursor: clickable ? 'pointer' : 'default',
+                color: done ? '#fff' : active ? '#fff' : 'rgba(139,92,246,0.5)',
+                background: done ? 'linear-gradient(135deg, #ec4899, #a855f7)' : active ? 'linear-gradient(135deg, #c026d3, #ec4899)' : 'rgba(30,15,60,0.6)',
+                border: '1.5px solid '+(done || active ? 'rgba(236,72,153,0.5)' : 'rgba(139,92,246,0.15)'),
+                boxShadow: active ? '0 0 24px rgba(236,72,153,0.5), 0 0 48px rgba(236,72,153,0.2), inset 0 1px 0 rgba(255,255,255,0.15)' : done ? '0 0 16px rgba(236,72,153,0.3)' : 'none',
+              }}
+              onMouseEnter={e => { if (clickable) e.currentTarget.style.transform='scale(1.1)'; }}
+              onMouseLeave={e => { if (clickable) e.currentTarget.style.transform='scale(1)'; }}
+              >{done ? '✓' : i + 1}</div>
+              <span onClick={clickable ? () => onStepClick(i) : undefined} style={{
+                fontSize: 11, fontWeight: active ? 700 : 500, letterSpacing: '0.05em',
+                color: done || active ? 'rgba(244,114,182,0.9)' : 'rgba(139,92,246,0.35)',
+                transition: 'all 0.3s', cursor: clickable ? 'pointer' : 'default',
+              }}>{label}</span>
+            </div>
+            {i < 3 && (<div style={{ flex: 1, height: 2, maxWidth: 80, minWidth: 40, marginBottom: 20,
+              background: i < current ? 'linear-gradient(90deg, rgba(236,72,153,0.7), rgba(168,85,247,0.5))' : 'rgba(139,92,246,0.1)',
+              borderRadius: 2, transition: 'all 0.5s', boxShadow: i < current ? '0 0 8px rgba(236,72,153,0.3)' : 'none',
+            }} />)}
+          </React.Fragment>
+        );
+      })}
+    </div>
+  );
+}
+
+function GlassCard({ children, style = {}, className = '', glow = false, noPad = false }) {
+  return (<div className={className} style={{
+    borderRadius: 20, padding: noPad ? 0 : '28px 32px', border: '1px solid rgba(139,92,246,0.1)',
+    background: 'linear-gradient(160deg, rgba(40,12,80,0.2) 0%, rgba(10,5,22,0.7) 50%, rgba(40,12,80,0.08) 100%)',
+    backdropFilter: 'blur(40px)', WebkitBackdropFilter: 'blur(40px)',
+    boxShadow: glow ? '0 8px 48px rgba(60,10,100,0.4), 0 0 1px rgba(139,92,246,0.2), inset 0 1px 0 rgba(255,255,255,0.03)' : '0 4px 32px rgba(6,2,15,0.5), inset 0 1px 0 rgba(255,255,255,0.02)',
+    ...style,
+  }}>{children}</div>);
+}
+
+function OptionCard({ selected, onClick, children, large = false }) {
+  return (<button onClick={onClick} style={{
+    position: 'relative', borderRadius: 16, padding: large ? '20px 16px' : '14px 12px',
+    border: '2px solid '+(selected ? 'rgba(236,72,153,0.55)' : 'rgba(139,92,246,0.12)'),
+    background: selected ? 'rgba(236,72,153,0.1)' : 'rgba(18,8,42,0.45)',
+    cursor: 'pointer', transition: 'all 0.25s cubic-bezier(0.16,1,0.3,1)',
+    transform: selected ? 'scale(1.04)' : 'scale(1)',
+    boxShadow: selected ? '0 0 28px rgba(236,72,153,0.3), inset 0 0 20px rgba(236,72,153,0.05)' : '0 2px 12px rgba(6,2,15,0.3)',
+    outline: 'none', color: 'inherit', fontFamily: 'inherit', width: '100%',
+  }}
+  onMouseEnter={e => { if (!selected) { e.currentTarget.style.borderColor='rgba(236,72,153,0.35)'; e.currentTarget.style.transform='scale(1.03)'; e.currentTarget.style.boxShadow='0 0 20px rgba(236,72,153,0.15)'; }}}
+  onMouseLeave={e => { if (!selected) { e.currentTarget.style.borderColor='rgba(139,92,246,0.12)'; e.currentTarget.style.transform='scale(1)'; e.currentTarget.style.boxShadow='0 2px 12px rgba(6,2,15,0.3)'; }}}
+  >{children}
+    {selected && (<div style={{ position:'absolute', top:-6, right:-6, width:24, height:24, borderRadius:'50%', background:'linear-gradient(135deg,#ec4899,#c026d3)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, color:'white', fontWeight:800, boxShadow:'0 0 12px rgba(236,72,153,0.6)', border:'2px solid rgba(6,2,15,0.8)' }}>✓</div>)}
+  </button>);
+}
+
+function PTag({ label, on, onClick }) {
+  return (<button onClick={onClick} style={{
+    padding: '10px 20px', borderRadius: 9999, fontSize: 14, fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer', transition: 'all 0.2s', outline: 'none',
+    background: on ? 'linear-gradient(135deg, #ec4899, #c026d3)' : 'rgba(30,15,60,0.5)',
+    color: on ? '#fff' : 'rgba(196,181,253,0.7)',
+    border: on ? '1px solid rgba(236,72,153,0.4)' : '1px solid rgba(139,92,246,0.15)',
+    boxShadow: on ? '0 4px 20px rgba(236,72,153,0.35)' : 'none',
+    transform: on ? 'scale(1.05)' : 'scale(1)',
+  }}
+  onMouseEnter={e => { if (!on) e.currentTarget.style.borderColor='rgba(236,72,153,0.35)'; }}
+  onMouseLeave={e => { if (!on) e.currentTarget.style.borderColor='rgba(139,92,246,0.15)'; }}
+  >{on ? '❤️ '+label : label}</button>);
+}
+
+function FinalCharacter({ cfg }) {
+  const hc = HAIR_COLORS[cfg.hairColor].hex;
+  const ec = EYE_COLORS[cfg.eyeColor].hex;
+  const sc = SKIN_TONES[cfg.skinTone] ? SKIN_TONES[cfg.skinTone].hex : '#fce4d6';
+  const fs = FACE_SHAPES[cfg.faceShape] || FACE_SHAPES.standard;
+  let bodyPath = '';
+  if (cfg.bodyType === 'slim') bodyPath = 'M72,144 Q67,198 72,278 Q82,'+(278+cfg.hip*0.28)+' 100,'+(283+cfg.hip*0.18)+' Q118,'+(278+cfg.hip*0.28)+' 128,278 Q133,198 128,144 Q118,'+(149-cfg.bust*0.14)+' 100,147 Q82,'+(149-cfg.bust*0.14)+' 72,144';
+  else if (cfg.bodyType === 'curvy') bodyPath = 'M62,144 Q56,188 '+(56-cfg.hip*0.09)+',258 Q'+(72+cfg.hip*0.14)+','+(288+cfg.hip*0.18)+' 100,'+(288+cfg.hip*0.14)+' Q'+(128+cfg.hip*0.14)+','+(288+cfg.hip*0.18)+' '+(144+cfg.hip*0.09)+',258 Q144,188 138,144 Q124,'+(144-cfg.bust*0.19)+' 100,147 Q76,'+(144-cfg.bust*0.19)+' 62,144';
+  else bodyPath = 'M67,144 Q63,198 '+(66-cfg.hip*0.04)+',268 Q'+(79+cfg.hip*0.09)+','+(284+cfg.hip*0.14)+' 100,'+(286+cfg.hip*0.09)+' Q'+(121+cfg.hip*0.09)+','+(284+cfg.hip*0.14)+' '+(134+cfg.hip*0.04)+',268 Q137,198 133,144 Q121,'+(147-cfg.bust*0.17)+' 100,147 Q79,'+(147-cfg.bust*0.17)+' 67,144';
+  return (
+    <div style={{ position:'relative', width:'100%', height:'100%', display:'flex', alignItems:'center', justifyContent:'center' }}>
+      <div style={{ position:'absolute', width:'60%', height:'60%', borderRadius:'50%', background:'radial-gradient(circle, '+hc+'44, transparent 70%)', filter:'blur(50px)', opacity:0.5 }} />
+      <img src={IMG_CHARACTER_FINAL} style={{ width:'70%', maxHeight:'90%', objectFit:'cover', objectPosition:'center top', borderRadius:16, filter:'drop-shadow(0 0 24px rgba(236,72,153,0.3))', position:'relative', zIndex:2 }} />
+      <div style={{ position:'absolute', bottom:24, left:16, right:16, display:'flex', flexWrap:'wrap', gap:8, justifyContent:'center', zIndex:3 }}>
+        {[
+          { label: SKIN_TONES[cfg.skinTone].label, bg:'rgba(168,85,247,0.15)', border:'rgba(168,85,247,0.25)', color:'#d8b4fe' },
+          { label: HAIR_STYLES[cfg.hairStyle].label, bg:'rgba(192,38,211,0.15)', border:'rgba(192,38,211,0.25)', color:'#f0abfc' },
+          { label: HAIR_COLORS[cfg.hairColor].label, bg:hc+'15', border:hc+'30', color:'#fce4ec' },
+          { label: FACE_SHAPES[cfg.faceShape].label, bg:'rgba(236,72,153,0.12)', border:'rgba(236,72,153,0.25)', color:'#f9a8d4' },
+        ].map((b,i) => (<span key={i} style={{ padding:'3px 10px', borderRadius:8, fontSize:11, fontWeight:600, background:b.bg, border:'1px solid '+b.border, color:b.color, backdropFilter:'blur(8px)' }}>{b.label}</span>))}
+      </div>
+    </div>
+  );
+}
+
+function App() {
+  const isMobile = useIsMobile();
+  const [step, setStep] = useState(0);
+  const [maxStep, setMaxStep] = useState(0);
+  const [cfg, setCfg] = useState({
+    bodyType: 'curvy', bust: 55, hip: 55,
+    skinTone: 'standard', faceShape: 'standard',
+    hairStyle: 'long_straight', hairColor: 'dark_brown', eyeColor: 'blue',
+    name: '樱井 澪', personalities: ['温柔'],
+  });
+
+  const upd = useCallback((p) => setCfg(c => ({ ...c, ...p })), []);
+  const pick = (a) => a[Math.floor(Math.random() * a.length)];
+
+  const randomize = () => {
+    const sh = [...PERSONALITIES].sort(() => Math.random() - 0.5);
+    setCfg({ bodyType: pick(['slim','curvy','average']), bust: 30+Math.floor(Math.random()*50), hip: 30+Math.floor(Math.random()*50),
+      skinTone: pick(['wheat','standard','fair']), faceShape: pick(['v_shape','standard','oval']),
+      hairStyle: pick(['short_curly','long_straight','high_ponytail']), hairColor: pick(['dark_brown','blonde','pink']),
+      eyeColor: pick(['blue','green','red']), name: pick(NAMES), personalities: sh.slice(0, 1+Math.floor(Math.random()*3)),
+    });
+    setStep(3); setMaxStep(3);
+  };
+
+  const next = () => { window.scrollTo({top:0, behavior:'instant'}); setStep(s => { const n = Math.min(s+1,3); setMaxStep(m => Math.max(m,n)); return n; }); };
+  const prev = () => { window.scrollTo({top:0, behavior:'instant'}); setStep(s => Math.max(s-1,0)); };
+  const goToStep = (i) => { if (i < step) { window.scrollTo({top:0, behavior:'instant'}); setStep(i); } };
+
+  // ── 跳转到伴侣聊天界面（companion.html 有 START 画面和真实 AI 女友）──
+  const goToCompanion = () => {
+    localStorage.setItem('companion_name', cfg.name || '她');
+    window.location.href = 'companion.html';
+  };
+
+  // STEP 0
+  const renderStep0 = () => (
+    <div style={{ display:'flex', flexDirection: isMobile ? 'column' : 'row', minHeight:'calc(100vh - 120px)', gap:0 }}>
+      <div className="anim-left" style={{ flex: isMobile ? '0 0 auto' : '0 0 65%', height: isMobile ? '70vw' : 'calc(100vh - 56px)', position:'relative', display:'flex', alignItems:'center', justifyContent:'center', overflow:'hidden' }}>
+        <div style={{ position:'absolute', width:'70%', height:'70%', borderRadius:'50%', background:'radial-gradient(circle, rgba(236,72,153,0.12), rgba(168,85,247,0.06), transparent)', filter:'blur(60px)', animation:'pulseGlow 8s ease-in-out infinite' }} />
+        <div style={{ position:'relative', zIndex:2, width: isMobile ? '60%' : '52%', height: isMobile ? '85%' : '82%', borderRadius:20, overflow:'hidden' }}>
+          <img src={IMG_CHARACTER} style={{ width:'100%', height:'100%', objectFit:'cover', objectPosition:'center top', display:'block' }} />
+          <div style={{ position:'absolute', inset:0, background:'linear-gradient(to right, transparent 60%, var(--bg-deep) 100%)' }} />
+          <div style={{ position:'absolute', inset:0, background:'linear-gradient(to bottom, transparent 75%, var(--bg-deep) 100%)' }} />
+        </div>
+        {!isMobile && <p style={{ position:'absolute', bottom:32, left:'50%', transform:'translateX(-50%)', color:'rgba(196,181,253,0.45)', fontSize:13, fontWeight:400, letterSpacing:'0.15em', fontFamily:'Outfit', whiteSpace:'nowrap' }}>AI GIRLFRIEND STUDIO</p>}
+      </div>
+      <div className="anim-right" style={{ flex: isMobile ? '1' : '0 0 35%', display:'flex', alignItems:'center', justifyContent:'center', padding: isMobile ? '16px 16px 32px' : '40px 48px 40px 24px' }}>
+        <GlassCard glow style={{ width:'100%', padding: isMobile ? '28px 20px' : '44px 36px' }}>
+          <h1 style={{ fontSize: isMobile ? 28 : 36, fontWeight:900, lineHeight:1.2, marginBottom:12, backgroundImage:'linear-gradient(135deg,#ec4899,#f472b6,#c026d3)', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent', backgroundClip:'text', filter:'drop-shadow(0 0 20px rgba(236,72,153,0.4))' }}>定制你的<br/>专属AI女友</h1>
+          <p style={{ color:'rgba(196,181,253,0.55)', fontSize: isMobile ? 13 : 15, fontWeight:400, marginBottom:28, lineHeight:1.6 }}>4步智能定制 · 创建独一无二的数字伴侣</p>
+          <button onClick={() => setStep(1)} style={{ width:'100%', padding:'22px 0', borderRadius:16, border:'none', cursor:'pointer', fontFamily:'inherit', fontSize:18, fontWeight:800, color:'#fff', marginBottom:14, background:'linear-gradient(135deg,#ec4899,#a855f7,#7c3aed)', boxShadow:'0 0 32px rgba(236,72,153,0.35), 0 0 64px rgba(168,85,247,0.15)', transition:'all 0.25s', position:'relative', overflow:'hidden', animation:'breathe 3s ease-in-out infinite' }}
+            onMouseEnter={e => e.currentTarget.style.transform='translateY(-2px) scale(1.01)'} onMouseLeave={e => e.currentTarget.style.transform='translateY(0) scale(1)'}>
+            <div style={{ position:'absolute', inset:0, background:'linear-gradient(105deg,transparent 40%,rgba(255,255,255,0.12) 45%,rgba(255,255,255,0.03) 50%,transparent 55%)', backgroundSize:'200% 100%', animation:'shimmer 3s ease-in-out infinite' }} />
+            <span style={{ position:'relative', zIndex:2 }}>✨ 立即开始定制</span>
+          </button>
+          <button onClick={randomize} style={{ width:'100%', padding:'22px 0', borderRadius:16, cursor:'pointer', fontFamily:'inherit', fontSize:18, fontWeight:800, color:'rgba(244,114,182,0.9)', background:'rgba(236,72,153,0.06)', border:'1.5px solid rgba(236,72,153,0.2)', transition:'all 0.25s' }}
+            onMouseEnter={e => { e.currentTarget.style.background='rgba(236,72,153,0.12)'; e.currentTarget.style.borderColor='rgba(236,72,153,0.4)'; }}
+            onMouseLeave={e => { e.currentTarget.style.background='rgba(236,72,153,0.06)'; e.currentTarget.style.borderColor='rgba(236,72,153,0.2)'; }}>🎲 随机生成</button>
+          <div style={{ display:'flex', gap:16, marginTop:28, justifyContent:'center' }}>
+            {['高清画质','语音互动','个性定制'].map(t => (<span key={t} style={{ fontSize:11, color:'rgba(139,92,246,0.45)', fontWeight:500, letterSpacing:'0.05em' }}>• {t}</span>))}
+          </div>
+        </GlassCard>
+      </div>
+    </div>
+  );
+
+  // STEP 1 — BODY
+  const renderStep1 = () => {
+    const bustKey = cfg.bust <= 42 ? 'small' : cfg.bust <= 62 ? 'medium' : 'large';
+    const hipKey = cfg.hip <= 42 ? 'small' : cfg.hip <= 62 ? 'medium' : 'large';
+    const Card = ({ selected, onClick, delay = 0, imgContent, label, desc }) => (
+      <div onClick={onClick} style={{
+        position:'relative', borderRadius:16, cursor:'pointer',
+        transition:'all 0.3s cubic-bezier(0.16,1,0.3,1)',
+        border: selected ? '2px solid rgba(236,72,153,0.6)' : '1.5px solid rgba(139,92,246,0.1)',
+        boxShadow: selected ? '0 0 32px rgba(236,72,153,0.3)' : '0 4px 20px rgba(6,2,15,0.35)',
+        transform: selected ? 'scale(1.03)' : 'scale(1)',
+        animation: 'fadeUp 0.5s cubic-bezier(0.16,1,0.3,1) '+delay+'s both',
+        overflow:'hidden',
+        aspectRatio: '3/4',
+        background:'rgba(10,5,22,0.8)',
+      }}
+      onMouseEnter={e => { if (!selected) { e.currentTarget.style.borderColor='rgba(236,72,153,0.3)'; e.currentTarget.style.transform='scale(1.02)'; }}}
+      onMouseLeave={e => { if (!selected) { e.currentTarget.style.borderColor='rgba(139,92,246,0.1)'; e.currentTarget.style.transform='scale(1)'; }}}>
+        {/* Full-bleed portrait image */}
+        <div style={{ position:'absolute', inset:0, overflow:'hidden' }}>
+          {imgContent}
+        </div>
+        {/* Bottom gradient + floating text */}
+        <div style={{ position:'absolute', inset:0, background:'linear-gradient(to top, rgba(6,2,15,0.85) 0%, rgba(6,2,15,0.3) 40%, transparent 65%)' }} />
+        <div style={{ position:'absolute', bottom:0, left:0, right:0, padding:'12px 14px 14px' }}>
+          <div style={{ fontSize:14, fontWeight:700, color: selected ? '#f9a8d4' : '#ede9fe', textShadow:'0 1px 6px rgba(0,0,0,0.8)' }}>{label}</div>
+          {desc && <div style={{ fontSize:11, color:'rgba(196,181,253,0.6)', marginTop:2, textShadow:'0 1px 4px rgba(0,0,0,0.8)' }}>{desc}</div>}
+        </div>
+        {selected && (<div style={{ position:'absolute', top:10, right:10, width:26, height:26, borderRadius:'50%', background:'linear-gradient(135deg,#ec4899,#c026d3)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:12, color:'white', fontWeight:800, boxShadow:'0 0 12px rgba(236,72,153,0.6)', zIndex:2 }}>✓</div>)}
+      </div>
+    );
+    const SH = ({ icon, label, sub }) => (<div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:14, marginTop:8 }}><span style={{ fontSize:20 }}>{icon}</span><span style={{ fontSize:15, fontWeight:700, color:'rgba(216,180,254,0.8)', letterSpacing:'0.06em' }}>{label}</span>{sub && <span style={{ fontSize:12, color:'rgba(139,92,246,0.4)', marginLeft:4 }}>{sub}</span>}</div>);
+    return (
+      <div className="anim-fade" style={{ padding: isMobile ? '24px 16px 60px' : '40px 64px 80px' }}>
+        <div style={{ textAlign:'center', marginBottom:40 }}>
+          <span style={{ fontSize:12, fontWeight:600, letterSpacing:'0.15em', color:'rgba(139,92,246,0.4)', fontFamily:'Outfit' }}>STEP 01</span>
+          <h2 style={{ fontSize: isMobile ? 24 : 32, fontWeight:800, marginTop:6, backgroundImage:'linear-gradient(135deg,#ec4899,#f472b6,#c026d3)', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent', backgroundClip:'text', filter:'drop-shadow(0 0 20px rgba(236,72,153,0.35))' }}>定制理想身型 🔥</h2>
+          <p style={{ color:'rgba(196,181,253,0.4)', fontSize: isMobile ? 13 : 15, marginTop:8 }}>三个维度，打造你心中的完美比例</p>
+        </div>
+        <div style={{ display:'flex', flexDirection:'column', gap:36 }}>
+          <div>
+            <SH icon="🎨" label="肤色" />
+            <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap: isMobile ? 12 : 20, width:'90%', margin:'0 auto' }}>
+              {Object.entries(SKIN_TONES).map(([k,v],i) => (
+                <Card key={k} selected={cfg.skinTone===k} onClick={() => upd({skinTone:k})} delay={i*0.08} label={v.label} desc={v.desc}
+                  imgContent={<img src={v.img} style={{ width:'100%', height:'100%', objectFit:'cover', position:'absolute', inset:0 }} />} />
+              ))}
+            </div>
+          </div>
+          <div>
+            <SH icon="💗" label="胸部" />
+            <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap: isMobile ? 12 : 20, width:'90%', margin:'0 auto' }}>
+              {Object.entries(BUST_SIZES).map(([k,v],i) => (
+                <Card key={k} selected={bustKey===k} onClick={() => upd({bust:v.value})} delay={i*0.08} label={v.label} desc={v.desc}
+                  imgContent={<img src={v.img} style={{ width:'100%', height:'100%', objectFit:'cover', position:'absolute', inset:0 }} />} />
+              ))}
+            </div>
+          </div>
+          <div>
+            <SH icon="🍑" label="臀部" />
+            <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap: isMobile ? 12 : 20, width:'90%', margin:'0 auto' }}>
+              {Object.entries(HIP_SIZES).map(([k,v],i) => (
+                <Card key={k} selected={hipKey===k} onClick={() => upd({hip:v.value})} delay={i*0.08} label={v.label} desc={v.desc}
+                  imgContent={<img src={v.img} style={{ width:'100%', height:'100%', objectFit:'cover', position:'absolute', inset:0 }} />} />
+              ))}
+            </div>
+          </div>
+          <div style={{ display:'flex', justifyContent:'flex-end', marginTop:8 }}>
+            <button onClick={next} style={{ width: isMobile ? '100%' : 320, padding:'22px 0', borderRadius:16, fontWeight:800, fontSize:18, color:'#fff', border:'none', cursor:'pointer', background:'linear-gradient(135deg,#ec4899,#c026d3,#a855f7)', boxShadow:'0 0 32px rgba(236,72,153,0.35), 0 0 64px rgba(192,38,211,0.15)', fontFamily:'inherit', transition:'all 0.25s', position:'relative', overflow:'hidden', animation:'breathe 3s ease-in-out infinite' }}
+              onMouseEnter={e => e.currentTarget.style.transform='translateY(-2px) scale(1.01)'} onMouseLeave={e => e.currentTarget.style.transform='translateY(0) scale(1)'}>
+              <div style={{ position:'absolute', inset:0, background:'linear-gradient(105deg,transparent 40%,rgba(255,255,255,0.1) 45%,rgba(255,255,255,0.02) 50%,transparent 55%)', backgroundSize:'200% 100%', animation:'shimmer 3s ease-in-out infinite' }} />
+              <span style={{ position:'relative', zIndex:2 }}>下一步 →</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // STEP 2 — FACE
+  const renderStep2 = () => {
+    const Card = ({ selected, onClick, delay = 0, imgContent, label, desc }) => (
+      <div onClick={onClick} style={{
+        position:'relative', borderRadius:16, cursor:'pointer',
+        transition:'all 0.3s cubic-bezier(0.16,1,0.3,1)',
+        border: selected ? '2px solid rgba(236,72,153,0.6)' : '1.5px solid rgba(139,92,246,0.1)',
+        boxShadow: selected ? '0 0 32px rgba(236,72,153,0.3)' : '0 4px 20px rgba(6,2,15,0.35)',
+        transform: selected ? 'scale(1.03)' : 'scale(1)',
+        animation: 'fadeUp 0.5s cubic-bezier(0.16,1,0.3,1) '+delay+'s both',
+        overflow:'hidden',
+        aspectRatio: '3/4',
+        background:'rgba(10,5,22,0.8)',
+      }}
+      onMouseEnter={e => { if (!selected) { e.currentTarget.style.borderColor='rgba(236,72,153,0.3)'; e.currentTarget.style.transform='scale(1.02)'; }}}
+      onMouseLeave={e => { if (!selected) { e.currentTarget.style.borderColor='rgba(139,92,246,0.1)'; e.currentTarget.style.transform='scale(1)'; }}}>
+        {/* Full-bleed portrait image */}
+        <div style={{ position:'absolute', inset:0, overflow:'hidden' }}>
+          {imgContent}
+        </div>
+        {/* Bottom gradient + floating text */}
+        <div style={{ position:'absolute', inset:0, background:'linear-gradient(to top, rgba(6,2,15,0.85) 0%, rgba(6,2,15,0.3) 40%, transparent 65%)' }} />
+        <div style={{ position:'absolute', bottom:0, left:0, right:0, padding:'12px 14px 14px' }}>
+          <div style={{ fontSize:14, fontWeight:700, color: selected ? '#f9a8d4' : '#ede9fe', textShadow:'0 1px 6px rgba(0,0,0,0.8)' }}>{label}</div>
+          {desc && <div style={{ fontSize:11, color:'rgba(196,181,253,0.6)', marginTop:2, textShadow:'0 1px 4px rgba(0,0,0,0.8)' }}>{desc}</div>}
+        </div>
+        {selected && (<div style={{ position:'absolute', top:10, right:10, width:26, height:26, borderRadius:'50%', background:'linear-gradient(135deg,#ec4899,#c026d3)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:12, color:'white', fontWeight:800, boxShadow:'0 0 12px rgba(236,72,153,0.6)', zIndex:2 }}>✓</div>)}
+      </div>
+    );
+    const SH = ({ icon, label }) => (<div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:14, marginTop:8 }}><span style={{ fontSize:20 }}>{icon}</span><span style={{ fontSize:15, fontWeight:700, color:'rgba(216,180,254,0.8)', letterSpacing:'0.06em' }}>{label}</span></div>);
+    return (
+      <div className="anim-fade" style={{ padding: isMobile ? '24px 16px 60px' : '40px 64px 80px' }}>
+        <div style={{ textAlign:'center', marginBottom:40 }}>
+          <span style={{ fontSize:12, fontWeight:600, letterSpacing:'0.15em', color:'rgba(139,92,246,0.4)', fontFamily:'Outfit' }}>STEP 02</span>
+          <h2 style={{ fontSize: isMobile ? 24 : 32, fontWeight:800, marginTop:6, backgroundImage:'linear-gradient(135deg,#ec4899,#f472b6,#c026d3)', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent', backgroundClip:'text', filter:'drop-shadow(0 0 20px rgba(236,72,153,0.35))' }}>设计面部特征 ✨</h2>
+          <p style={{ color:'rgba(196,181,253,0.4)', fontSize: isMobile ? 13 : 15, marginTop:8 }}>自由组合发型、发色与脸型</p>
+        </div>
+        <div style={{ display:'flex', flexDirection:'column', gap:36 }}>
+          <div>
+            <SH icon="💇" label="发型" />
+            <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap: isMobile ? 12 : 20, width:'90%', margin:'0 auto' }}>
+              {Object.entries(HAIR_STYLES).map(([k,v],i) => (
+                <Card key={k} selected={cfg.hairStyle===k} onClick={() => upd({hairStyle:k})} delay={i*0.08} label={v.label} desc={['活泼自然','优雅经典','青春活力'][i]}
+                  imgContent={<img src={v.img} style={{ width:'100%', height:'100%', objectFit:'cover', position:'absolute', inset:0 }} />} />
+              ))}
+            </div>
+          </div>
+          <div>
+            <SH icon="🎨" label="发色" />
+            <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap: isMobile ? 12 : 20, width:'90%', margin:'0 auto' }}>
+              {Object.entries(HAIR_COLORS).map(([k,v],i) => (
+                <Card key={k} selected={cfg.hairColor===k} onClick={() => upd({hairColor:k})} delay={i*0.08} label={v.label}
+                  imgContent={<img src={v.img} style={{ width:'100%', height:'100%', objectFit:'cover', position:'absolute', inset:0 }} />} />
+              ))}
+            </div>
+          </div>
+          <div>
+            <SH icon="🥚" label="脸型" />
+            <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap: isMobile ? 12 : 20, width:'90%', margin:'0 auto' }}>
+              {Object.entries(FACE_SHAPES).map(([k,v],i) => (
+                <Card key={k} selected={cfg.faceShape===k} onClick={() => upd({faceShape:k})} delay={i*0.08} label={v.label} desc={v.desc}
+                  imgContent={<img src={v.img} style={{ width:'100%', height:'100%', objectFit:'cover', position:'absolute', inset:0 }} />} />
+              ))}
+            </div>
+          </div>
+          <div style={{ padding:'20px 24px', borderRadius:20, background:'linear-gradient(155deg, rgba(245,158,11,0.06) 0%, rgba(236,72,153,0.03) 50%, rgba(168,85,247,0.03) 100%)', border:'1px solid rgba(245,158,11,0.15)', position:'relative', overflow:'hidden' }}>
+            <div style={{ position:'absolute', top:0, right:0, padding:'5px 18px', borderRadius:'0 18px 0 14px', background:'linear-gradient(135deg, #f59e0b, #f97316)', fontSize:10, fontWeight:800, color:'#000', letterSpacing:'0.06em' }}>PRO</div>
+            <div style={{ display:'flex', alignItems:'center', gap:14, marginBottom:16 }}>
+              <div style={{ width:48, height:48, borderRadius:14, background:'rgba(245,158,11,0.1)', border:'1px solid rgba(245,158,11,0.18)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:24, flexShrink:0 }}>📷</div>
+              <div><div style={{ fontSize:16, fontWeight:700, color:'#fbbf24', lineHeight:1.3 }}>用照片创造人物</div><div style={{ fontSize:12, color:'rgba(196,181,253,0.4)', marginTop:3 }}>上传真实照片 · AI智能生成专属角色</div></div>
+            </div>
+            <button style={{ width:'100%', padding:'16px 0', borderRadius:14, border:'1.5px solid rgba(245,158,11,0.2)', background:'rgba(245,158,11,0.06)', color:'#fbbf24', fontSize:15, fontWeight:700, cursor:'pointer', fontFamily:'inherit', transition:'all 0.25s', minHeight:56 }}
+              onMouseEnter={e => { e.currentTarget.style.background='rgba(245,158,11,0.14)'; e.currentTarget.style.borderColor='rgba(245,158,11,0.4)'; }}
+              onMouseLeave={e => { e.currentTarget.style.background='rgba(245,158,11,0.06)'; e.currentTarget.style.borderColor='rgba(245,158,11,0.2)'; }}
+              onClick={() => alert('📷 照片上传功能即将开放')}>📷 上传照片生成</button>
+            <p style={{ fontSize:10, color:'rgba(245,158,11,0.35)', textAlign:'center', marginTop:8 }}>需开通PRO会员 · ¥9.9/次起</p>
+          </div>
+          <div style={{ display:'flex', justifyContent:'flex-end' }}>
+            <button onClick={next} style={{ width: isMobile ? '100%' : 320, padding:'22px 0', borderRadius:16, fontWeight:800, fontSize:18, color:'#fff', border:'none', cursor:'pointer', background:'linear-gradient(135deg,#ec4899,#c026d3,#a855f7)', boxShadow:'0 0 32px rgba(236,72,153,0.35), 0 0 64px rgba(192,38,211,0.15)', fontFamily:'inherit', transition:'all 0.25s', position:'relative', overflow:'hidden', animation:'breathe 3s ease-in-out infinite' }}
+              onMouseEnter={e => e.currentTarget.style.transform='translateY(-2px) scale(1.01)'} onMouseLeave={e => e.currentTarget.style.transform='translateY(0) scale(1)'}>
+              <div style={{ position:'absolute', inset:0, background:'linear-gradient(105deg,transparent 40%,rgba(255,255,255,0.1) 45%,rgba(255,255,255,0.02) 50%,transparent 55%)', backgroundSize:'200% 100%', animation:'shimmer 3s ease-in-out infinite' }} />
+              <span style={{ position:'relative', zIndex:2 }}>完成定制 →</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // STEP 3 — COMPLETE
+  const renderStep3 = () => (
+    <div style={{ display:'flex', flexDirection: isMobile ? 'column' : 'row', minHeight:'calc(100vh - 120px)', gap:0 }}>
+      <div className="anim-left" style={{ flex: isMobile ? '0 0 auto' : '0 0 65%', height: isMobile ? '110vw' : 'calc(100vh - 120px)', maxHeight: isMobile ? 480 : undefined, position: isMobile ? 'relative' : 'sticky', top: isMobile ? undefined : 120, overflow:'hidden' }}>
+        <div style={{ position:'absolute', inset:24, borderRadius:24, zIndex:0 }}>
+          <div style={{ position:'absolute', inset:-2, borderRadius:26, background:'linear-gradient(135deg,#c026d3,#ec4899,#8b5cf6,#c026d3)', backgroundSize:'300% 300%', animation:'borderFlow 5s ease infinite', opacity:0.6 }} />
+          <div style={{ position:'absolute', inset:2, borderRadius:22, background:'#0a0518' }} />
+        </div>
+        <div style={{ position:'absolute', inset:28, borderRadius:20, overflow:'hidden', zIndex:1, background:'linear-gradient(180deg, #120830 0%, #0a0518 50%, #06020f 100%)' }}>
+          <FinalCharacter cfg={cfg} />
+          <div style={{ position:'absolute', inset:0, opacity:0.02, backgroundImage:'repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(255,255,255,0.04) 2px,rgba(255,255,255,0.04) 4px)' }} />
+        </div>
+      </div>
+      <div className="anim-right" style={{ flex: isMobile ? '1' : '0 0 35%', display:'flex', alignItems:'center', padding: isMobile ? '16px 16px 32px' : '40px 48px 40px 16px' }}>
+        <div style={{ width:'100%', maxHeight:'calc(100vh - 160px)', overflowY:'auto', paddingRight:4 }} className="name-input-scroll">
+        <GlassCard glow style={{ width:'100%', padding:'36px 32px' }}>
+          <h3 style={{ fontSize:22, fontWeight:800, marginBottom:4, backgroundImage:'linear-gradient(135deg,#ec4899,#f472b6)', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent' }}>定制完成 ❤️</h3>
+          <p style={{ color:'rgba(196,181,253,0.4)', fontSize:13, marginBottom:24 }}>你的专属AI女友已准备就绪</p>
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:8, marginBottom:24 }}>
+            {[{k:'肤色',v:SKIN_TONES[cfg.skinTone].label},{k:'胸部',v:cfg.bust},{k:'臀部',v:cfg.hip},{k:'发型',v:HAIR_STYLES[cfg.hairStyle].label},{k:'发色',v:HAIR_COLORS[cfg.hairColor].label},{k:'脸型',v:FACE_SHAPES[cfg.faceShape].label}].map(x => (
+              <div key={x.k} style={{ background:'rgba(30,15,60,0.35)', borderRadius:12, padding:'10px 8px', border:'1px solid rgba(139,92,246,0.06)', textAlign:'center' }}>
+                <div style={{ fontSize:9, fontWeight:500, color:'rgba(139,92,246,0.4)', textTransform:'uppercase', letterSpacing:'0.1em' }}>{x.k}</div>
+                <div style={{ fontSize:14, fontWeight:700, color:'#f9a8d4', marginTop:3 }}>{x.v}</div>
+              </div>))}
+          </div>
+          <div style={{ marginBottom:20 }}>
+            <label style={{ fontSize:12, fontWeight:600, color:'rgba(196,181,253,0.5)' }}>💕 她的名字</label>
+            <input value={cfg.name} onChange={e => upd({name:e.target.value})} placeholder="输入名字…"
+              autoComplete="off" autoCorrect="off" autoCapitalize="off" spellCheck="false"
+              style={{ width:'100%', padding:'14px 18px', borderRadius:14, background:'rgba(30,15,60,0.45)', border:'1.5px solid rgba(236,72,153,0.2)', color:'#fff', fontSize:16, fontWeight:600, outline:'none', marginTop:8, fontFamily:'inherit', transition:'all 0.2s', touchAction:'manipulation', WebkitUserSelect:'text', userSelect:'text' }}
+              onFocus={e => { e.target.style.borderColor='rgba(236,72,153,0.5)'; e.target.style.boxShadow='0 0 20px rgba(236,72,153,0.15)'; }}
+              onBlur={e => { e.target.style.borderColor='rgba(236,72,153,0.2)'; e.target.style.boxShadow='none'; }} />
+          </div>
+          <div style={{ marginBottom:24 }}>
+            <label style={{ fontSize:12, fontWeight:600, color:'rgba(196,181,253,0.5)' }}>🎭 个性标签</label>
+            <div style={{ display:'flex', flexWrap:'wrap', gap:8, marginTop:8 }}>
+              {PERSONALITIES.map(p => (<PTag key={p} label={p} on={cfg.personalities.includes(p)} onClick={() => { const has = cfg.personalities.includes(p); upd({ personalities: has ? cfg.personalities.filter(x => x !== p) : [...cfg.personalities, p] }); }} />))}
+            </div>
+          </div>
+
+          {/* ── 直接跳转到 companion.html（有 START 画面 + 真实 AI 女友视频） ── */}
+          <button onClick={goToCompanion} style={{ width:'100%', padding:'22px 0', borderRadius:16, fontWeight:800, fontSize:18, color:'#fff', border:'none', cursor:'pointer', fontFamily:'inherit', transition:'all 0.3s', background:'linear-gradient(135deg,#ec4899,#c026d3,#a855f7)', boxShadow:'0 0 36px rgba(236,72,153,0.35), 0 0 72px rgba(192,38,211,0.15)', animation:'portalPulse 3s ease-in-out infinite', position:'relative', overflow:'hidden' }}
+            onMouseEnter={e => { e.currentTarget.style.transform='translateY(-3px) scale(1.02)'; e.currentTarget.style.boxShadow='0 0 60px rgba(236,72,153,0.6), 0 0 120px rgba(192,38,211,0.3)'; }}
+            onMouseLeave={e => { e.currentTarget.style.transform='translateY(0) scale(1)'; e.currentTarget.style.boxShadow='0 0 36px rgba(236,72,153,0.35), 0 0 72px rgba(192,38,211,0.15)'; }}>
+            <div style={{ position:'absolute', inset:0, background:'linear-gradient(105deg,transparent 35%,rgba(255,255,255,0.15) 45%,rgba(255,255,255,0.03) 55%,transparent 65%)', backgroundSize:'200% 100%', animation:'shimmer 2.5s ease-in-out infinite' }} />
+            <span style={{ position:'relative', zIndex:2 }}>❤️ 开启私密互动</span>
+          </button>
+          <p style={{ textAlign:'center', fontSize:11, color:'rgba(139,92,246,0.35)', marginTop:10 }}>支持高清画质 · 语音对话 · 深度互动</p>
+        </GlassCard>
+        </div>
+      </div>
+    </div>
+  );
+
+  const steps = [renderStep0, renderStep1, renderStep2, renderStep3];
+
+  return (
+    <div style={{ minHeight:'100vh', background:'linear-gradient(180deg, #0c0620 0%, #06020f 40%, #08031a 100%)' }}>
+      <AmbientLayer />
+      <nav style={{ position:'relative', zIndex:50, borderBottom:'1px solid rgba(139,92,246,0.06)', background:'rgba(6,2,15,0.7)', backdropFilter:'blur(20px)', WebkitBackdropFilter:'blur(20px)' }}>
+        <div style={{ maxWidth:1440, margin:'0 auto', padding: isMobile ? '0 16px' : '0 48px', height:56, display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+          <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+            <div style={{ width:32, height:32, borderRadius:10, display:'flex', alignItems:'center', justifyContent:'center', background:'linear-gradient(135deg,#ec4899,#c026d3)', boxShadow:'0 0 16px rgba(236,72,153,0.4)' }}><span style={{ color:'#fff', fontSize:11, fontWeight:900, fontFamily:'Outfit' }}>AI</span></div>
+            <span style={{ fontSize:17, fontWeight:800, fontFamily:'Outfit', backgroundImage:'linear-gradient(90deg,#ec4899,#f472b6)', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent' }}>GIRLFRIEND</span>
+            <span style={{ fontSize:10, padding:'2px 8px', borderRadius:6, background:'rgba(168,85,247,0.12)', color:'rgba(168,85,247,0.6)', fontWeight:600, letterSpacing:'0.08em', marginLeft:4 }}>BETA</span>
+          </div>
+          <div className="nav-links" style={{ display:'flex', alignItems:'center', gap:4 }}>
+            {['主页','定制','互动','账户'].map((t,i) => (<button key={t} style={{ padding:'6px 16px', borderRadius:10, fontSize:13, fontWeight:500, border:'none', cursor:'pointer', fontFamily:'inherit', transition:'all 0.2s', background: i===1 ? 'rgba(236,72,153,0.1)' : 'transparent', color: i===1 ? 'rgba(244,114,182,0.9)' : 'rgba(139,92,246,0.45)' }}>{t}</button>))}
+          </div>
+        </div>
+      </nav>
+      <div style={{ position:'relative', zIndex:40, maxWidth:1440, margin:'0 auto', padding: isMobile ? '0 16px' : '0 48px' }}>
+        {step > 0 && !isMobile && (<button onClick={prev} style={{ position:'absolute', left:48, top:14, zIndex:50, display:'flex', alignItems:'center', gap:6, padding:'8px 18px', borderRadius:10, fontWeight:600, fontSize:13, color:'rgba(196,181,253,0.6)', border:'1px solid rgba(139,92,246,0.12)', background:'rgba(30,15,60,0.35)', backdropFilter:'blur(12px)', WebkitBackdropFilter:'blur(12px)', cursor:'pointer', fontFamily:'inherit', transition:'all 0.2s' }}
+          onMouseEnter={e => { e.currentTarget.style.borderColor='rgba(236,72,153,0.3)'; e.currentTarget.style.color='rgba(244,114,182,0.8)'; }}
+          onMouseLeave={e => { e.currentTarget.style.borderColor='rgba(139,92,246,0.12)'; e.currentTarget.style.color='rgba(196,181,253,0.6)'; }}>← 返回</button>)}
+        <ProgressBar current={step} onStepClick={goToStep} />
+      </div>
+      <main style={{ position:'relative', zIndex:30, maxWidth:1440, margin:'0 auto' }} key={step}>{steps[step]()}</main>
+    </div>
+  );
+}
+
+ReactDOM.render(<App />, document.getElementById('root'));
+</script>
+</body>
+</html>
