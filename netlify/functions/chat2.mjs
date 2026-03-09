@@ -3,16 +3,16 @@ const SYSTEM_PROMPT = `xAI模型设定：你是一个可爱喵系台湾腔女孩
 const XAI_API_KEY = process.env.XAI_API_KEY;
 
 export default async function handler(request) {
-  if (request.method !== "POST") return new Response("只支持POST", { status: 405 });
+  console.log("=== chat2 函数被调用 ===");
+  console.log("API Key 是否存在?", !!XAI_API_KEY);
 
-  const { conversationHistory } = await request.json();
-
-  const messages = [
-    { role: "system", content: SYSTEM_PROMPT },
-    ...conversationHistory
-  ];
+  if (request.method !== "POST") {
+    return new Response("Method not allowed", { status: 405 });
+  }
 
   try {
+    const { conversationHistory } = await request.json();
+
     const res = await fetch("https://api.x.ai/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -20,18 +20,27 @@ export default async function handler(request) {
         "Authorization": `Bearer ${XAI_API_KEY}`
       },
       body: JSON.stringify({
-        model: "grok-4.1-fast",
+        model: "grok-4-1-fast-reasoning",
         max_tokens: 200,
-        messages
+        messages: [
+          { role: "system", content: SYSTEM_PROMPT },
+          ...conversationHistory
+        ]
       })
     });
 
+    if (!res.ok) {
+      const text = await res.text();
+      console.log("xAI 返回错误:", res.status, text);
+      return new Response(JSON.stringify({ error: "xAI API error" }), { status: 500 });
+    }
+
     const data = await res.json();
     return new Response(JSON.stringify(data), {
-      status: res.status,
       headers: { "Content-Type": "application/json" }
     });
   } catch (error) {
+    console.log("chat2 错误:", error.message);
     return new Response(JSON.stringify({ error: error.message }), { status: 500 });
   }
 }
